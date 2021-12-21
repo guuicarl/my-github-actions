@@ -1,0 +1,15 @@
+name: 'Thank u action'
+description: 'Retorna um obrigado para novos pull requests'
+author: 'Guilherme Carlos'
+
+inputs:
+  GITHUB_TOKEN:
+    description: 'Github token'
+    required: true
+  TENOR_TOKEN:
+    description: 'Tenor API token'
+    required: true
+
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
