@@ -15251,34 +15251,62 @@ module.exports = JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45,46],"valid"]
 var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
 (() => {
+// @ts-ignore
 const fetch = __nccwpck_require__(7580);
 const core = __nccwpck_require__(2186);
 const github = __nccwpck_require__(5438);
 
-async function run(){
-    const GITHUB_TOKEN = core.getInput('GITHUB_TOKEN');
-    const TENOR_TOKEN = core.getInput('TENOR_TOKEN');
+async function run() {
+  const GITHUB_TOKEN = core.getInput("GITHUB_TOKEN");
+  const TENOR_TOKEN = core.getInput("TENOR_TOKEN") || process.env.TENOR_TOKEN;
+  const message = core.getInput("message") || "Thank you!";
+  const searchTerm = core.getInput("searchTerm") || "thank you";
 
-    const ramdomPos = Math.round(Math.random() *1000);
-    const url = "https://api.tenor.com/v1/search?q=love&pos=$123&limit=1&media_filter=minimal&contentfilter=high&key=HS0UNSXONQCL";
+  if (typeof TENOR_TOKEN !== "string") {
+    throw new Error(
+      "Invalid TENOR_TOKEN: did you forget to set it in your action config?"
+    );
+  }
 
-    const response = await fetch(url);
-    const { results } = await response.json();
-    const gifUrl = results[0].media[0].tinygif.url;
+  if (typeof GITHUB_TOKEN !== "string") {
+    throw new Error(
+      "Invalid GITHUB_TOKEN: did you forget to set it in your action config?"
+    );
+  }
 
-    const octokit = github.getOctokit(GITHUB_TOKEN);
+  const randomPos = Math.round(Math.random() * 1000);
+  const url =
+  "https://api.tenor.com/v1/search?q=love&pos=$123&limit=1&media_filter=minimal&contentfilter=high&key=HS0UNSXONQCL";
+    
+  console.log(`Searching Tenor: ${url}`);
 
-    const { context = {} } = github;
-    const { pull_request } = context.payload; 
+  const response = await fetch(url);
+  const { results } = await response.json();
+  const gifUrl = results[0].media[0].tinygif.url;
 
-    await octokit.rest.issues.createComment({
-        ...context.repo,
-        issue_number: pull_request.number,
-        body: `Thank you for submitting a pull request! We will try to review this as soon as we can.\n\n<img src="${gifUrl}" alt = "thank you" />`
-    });
+  console.log(`Found gif from Tenor: ${gifUrl}`);
+
+  const { context = {} } = github;
+  // @ts-ignore
+  const { pull_request } = context.payload;
+
+  if (!pull_request) {
+    throw new Error("Could not find pull request!");
+  }
+
+  console.log(`Found pull request: ${pull_request.number}`);
+
+  const octokit = github.getOctokit(GITHUB_TOKEN);
+
+  await octokit.issues.createComment({
+    // @ts-ignore
+    ...context.repo,
+    issue_number: pull_request.number,
+    body: `${message}`,
+  });
 }
 
-run ();
+run().catch((e) => core.setFailed(e.message));
 })();
 
 module.exports = __webpack_exports__;
